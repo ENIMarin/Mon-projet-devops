@@ -13,6 +13,9 @@ RUN npm run build
 
 
 # Étape 2 : serveur web
+
+# DockerFile en deux étapes pour construire l'application Angular et la servir avec Nginx
+
 FROM nginx:alpine
 
 COPY --from=build /app/dist/frontend/ /usr/share/nginx/html/
