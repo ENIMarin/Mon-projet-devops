@@ -1,6 +1,5 @@
-name: CI/CD Pipeline - Backend
+name: CI/CD Pipeline - Fullstack
 
-# 1. Le déclencheur : Le robot s'active à chaque fois qu'on pousse du code sur "main"
 on:
   push:
     branches:
@@ -8,49 +7,74 @@ on:
 
 jobs:
   # ==========================================
-  # ÉTAPE 1 : CONSTRUCTION DE L'IMAGE DOCKER
+  # 🔵 TRACK BACKEND (Se lance immédiatement)
   # ==========================================
-  build-and-push:
+  build-backend:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Récupération du code source
+      - name: 📥 Code source
         uses: actions/checkout@v4
-
-      - name: 🔑 Connexion à Docker Hub
+      - name: 🔑 Connexion Docker
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: 🔨 Build & Push vers Docker Hub
+      - name: 🔨 Build & Push Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend      # Le dossier où se trouve ton Dockerfile
+          context: ./backend
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/mon-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/mon-backend:${{ github.sha }}
 
-  # ==========================================
-  # ÉTAPE 2 : DÉPLOIEMENT SUR KUBERNETES (AKS)
-  # ==========================================
-  deploy-to-aks:
-    needs: build-and-push # On attend que l'image soit créée avant de déployer
+  deploy-backend:
+    needs: build-backend # Attend que l'image backend soit prête
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Récupération du code source
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Configuration de l'accès Kubernetes
-        uses: azure/k8s-set-context@v3
+      - uses: actions/checkout@v4
+      - uses: azure/k8s-set-context@v3
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
-
-      - name: 🚀 Déploiement et Rolling Update
+      - name: 🚀 Déploiement Backend
         run: |
-          # 1. On applique le fichier YAML classique
           kubectl apply -f k8s/backend.yaml
-          
-          # 2. On met à jour l'image avec la nouvelle version qu'on vient de compiler
           kubectl set image deployment/backend-deployment backend=${{ secrets.DOCKER_USERNAME }}/mon-backend:${{ github.sha }}
+
+  # ==========================================
+  # 🟢 TRACK FRONTEND (Se lance immédiatement)
+  # ==========================================
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Code source
+        uses: actions/checkout@v4
+      - name: 🔑 Connexion Docker
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: 🔨 Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend      # <-- Assure-toi que ton dossier s'appelle bien "frontend"
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/mon-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/mon-frontend:${{ github.sha }}
+
+  deploy-frontend:
+    needs: build-frontend # Attend que l'image frontend soit prête
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+      - name: 🚀 Déploiement Frontend
+        run: |
+          kubectl apply -f k8s/frontend.yaml
+          # Attention aux noms ici : vérifie que ça correspond bien à ton fichier frontend.yaml !
+          kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/mon-frontend:${{ github.sha }}

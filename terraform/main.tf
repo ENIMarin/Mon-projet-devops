@@ -32,7 +32,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
   identity {
     type = "SystemAssigned"
   }
-
-  # LA SOLUTION : On copie exactement tous les tags (y compris le bon "user") du groupe de ressources
+  
   tags = data.azurerm_resource_group.rg.tags
 }
