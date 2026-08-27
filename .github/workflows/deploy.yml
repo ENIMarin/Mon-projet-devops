@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Fullstack
+name: CI/CD Pipeline - Fullstack avec Tests
 
 on:
   push:
@@ -7,18 +7,33 @@ on:
 
 jobs:
   # ==========================================
-  # 🔵 TRACK BACKEND (Se lance immédiatement)
+  # 🔵 TRACK BACKEND
   # ==========================================
   build-backend:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Code source
         uses: actions/checkout@v4
+
+      # --- 🧪 ÉTAPE DE TESTS BACKEND ---
+      - name: ⚙️ Préparer Node.js pour les tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🧪 Installer et tester le Backend
+        run: |
+          cd backend
+          npm install
+          npm test
+      # ---------------------------------
+
       - name: 🔑 Connexion Docker
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: 🔨 Build & Push Backend
         uses: docker/build-push-action@v5
         with:
@@ -29,7 +44,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/mon-backend:${{ github.sha }}
 
   deploy-backend:
-    needs: build-backend # Attend que l'image backend soit prête
+    needs: build-backend # On déploie uniquement si la construction ET LES TESTS ont réussi !
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,30 +57,46 @@ jobs:
           kubectl apply -f k8s/backend.yaml
           kubectl set image deployment/backend-deployment backend=${{ secrets.DOCKER_USERNAME }}/mon-backend:${{ github.sha }}
 
+
   # ==========================================
-  # 🟢 TRACK FRONTEND (Se lance immédiatement)
+  # 🟢 TRACK FRONTEND
   # ==========================================
   build-frontend:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Code source
         uses: actions/checkout@v4
+
+      # --- 🧪 ÉTAPE DE TESTS FRONTEND ---
+      - name: ⚙️ Préparer Node.js pour les tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🧪 Installer et tester le Frontend
+        run: |
+          cd frontend
+          npm install
+          npm test
+      # ----------------------------------
+
       - name: 🔑 Connexion Docker
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: 🔨 Build & Push Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend      # <-- Assure-toi que ton dossier s'appelle bien "frontend"
+          context: ./frontend
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/mon-frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/mon-frontend:${{ github.sha }}
 
   deploy-frontend:
-    needs: build-frontend # Attend que l'image frontend soit prête
+    needs: build-frontend # On déploie uniquement si la construction ET LES TESTS ont réussi !
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,5 +107,4 @@ jobs:
       - name: 🚀 Déploiement Frontend
         run: |
           kubectl apply -f k8s/frontend.yaml
-          # Attention aux noms ici : vérifie que ça correspond bien à ton fichier frontend.yaml !
           kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/mon-frontend:${{ github.sha }}
