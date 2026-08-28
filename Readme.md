@@ -689,31 +689,7 @@ Ce principe s’applique notamment :
 
 ---
 
-# 11. Difficultés rencontrées et solutions apportées
-
-## 11.1 Problème de connexion à MySQL avec Docker
-
-### Problème
-
-Lors de la conteneurisation, le backend tentait encore de se connecter à MySQL via `localhost`.
-
-### Cause
-
-Dans Docker, `localhost` désigne le conteneur courant et non l’autre conteneur.
-
-### Solution
-
-La configuration a été adaptée afin d'utiliser le nom réseau du service MySQL.
-
-Cette correction est importante car elle permet au backend de communiquer avec un service externe à son propre conteneur.
-
-### Analyse
-
-Ce problème montre que la migration d’une architecture monolithique exécutée sur une même machine vers une architecture distribuée nécessite d’adapter les mécanismes de communication entre services.
-
----
-
-# 12. Difficultés liées au déploiement
+# 11. Difficultés liées au déploiement
 
 Le passage d’une application fonctionnelle en local vers Kubernetes ajoute plusieurs niveaux de complexité :
 
@@ -744,7 +720,7 @@ Le projet a donc permis de comprendre qu’un problème de production ne vient p
 
 ---
 
-# 13. Organisation du projet
+# 12. Organisation du projet
 
 L’organisation générale du projet repose sur une séparation entre :
 
@@ -784,7 +760,7 @@ Elle facilite également la maintenance et la compréhension du projet.
 
 ---
 
-# 14. Choix techniques
+# 13. Choix techniques
 
 ## Docker
 
@@ -830,7 +806,7 @@ Prometheus et Grafana sont complémentaires :
 
 ---
 
-# 15. Processus complet de mise en production
+# 14. Processus complet de mise en production
 
 Le processus final peut être résumé ainsi :
 
@@ -889,7 +865,7 @@ Ce processus permet de passer du code source au déploiement automatisé tout en
 
 ---
 
-# 16. Bilan et analyse critique
+# 15. Bilan et analyse critique
 
 Le projet a permis de mettre en œuvre une chaîne DevOps complète allant du développement local à la supervision d’une application déployée dans Kubernetes.
 
@@ -924,7 +900,7 @@ Ces évolutions permettraient de rapprocher davantage le projet d’une architec
 
 ---
 
-# 17. Conclusion
+# 16. Conclusion
 
 Le projet répond à une démarche DevOps complète.
 
@@ -940,6 +916,6 @@ Enfin, Prometheus et Grafana permettent de superviser l’environnement et de su
 
 L’ensemble forme une chaîne cohérente :
 
-**Code → Tests → Docker → Registry → Azure/AKS → Kubernetes → Monitoring**
+**Code → Tests → Docker → Registry → Azure/AKS → Kubernetes → CI/CD Github → Monitoring**
 
 Cette architecture permet d’obtenir une solution plus reproductible, automatisée, observable et maintenable qu’un déploiement manuel traditionnel.
